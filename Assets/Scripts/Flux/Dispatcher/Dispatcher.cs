@@ -5,7 +5,18 @@ using System.Collections.Generic;
 
 namespace Flux {
 
-  public abstract class Dispatcher<T> : MonoSingleton<T> where T : Dispatcher<T> {
+  public abstract class Dispatcher<T> where T : Dispatcher<T>, new() {
+
+    private static T instance;
+
+    public static T Instance {
+      get {
+        if (instance == null) {
+          instance = new T();
+        }
+        return instance;
+      }
+    }
 
     private int lastId;
     private IDictionary<int, Action<Payload>> callbacks;
@@ -56,13 +67,11 @@ namespace Flux {
       }
     }
 
-    public void Dispatch(Payload payload) {
+    public virtual void Dispatch(Payload payload) {
       Invariant(!this.isDispatching,
         "Dispatcher#dispatch(...): Cannot dispatch in the middle of a dispatch.");
 
       this.StartDispatching(payload);
-
-      Debug.Log(payload);
 
       try {
         foreach (int id in this.callbacks.Keys) {
